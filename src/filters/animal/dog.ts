@@ -15,12 +15,13 @@ export function drawDog(d: DrawCtx) {
 
   // Each ear is anchored where it meets the scalp; the visible body hangs down.
   const lEarAnchor = {
-    x: lEye.x - eyeSpan * 0.28,
-    y: lEye.y - s * 0.82,
+    x: lEye.x - eyeSpan * 0.42,
+    y: lEye.y - s * 0.58,
   };
+
   const rEarAnchor = {
-    x: rEye.x + eyeSpan * 0.28,
-    y: rEye.y - s * 0.82,
+    x: rEye.x + eyeSpan * 0.42,
+    y: rEye.y - s * 0.58,
   };
 
   // ── Ears (drawn behind everything else) ──────────────────────────────
@@ -32,7 +33,7 @@ export function drawDog(d: DrawCtx) {
     // Translate to anchor point; the ear body is drawn centred slightly
     // below the anchor so it appears to droop naturally from the scalp.
     ctx.translate(anchor.x, anchor.y);
-    ctx.rotate(angle + side * 0.10);   // slight outward tilt per side
+    ctx.rotate(angle + side * 0.22);   // slight outward tilt per side
 
     // Outer ear — large floppy ellipse drooping downward
     const earCX = side * s * 0.02;
@@ -97,17 +98,22 @@ export function drawDog(d: DrawCtx) {
   // ── Tongue ────────────────────────────────────────────────────────────
   // Anchor at the lower lip so the tongue appears to protrude from the mouth
   // and hang far below the chin, matching the reference image.
-  const mc          = d.mouthCenter();
-  const lowerLip    = d.pt(17);   // bottom of lower lip / chin landmark
-  const tongueTopY  = lowerLip.y; // tongue starts flush with the lower lip
+  const mc = d.mouthCenter();
+  const lowerLip = d.pt(14);
+  const upperLip = d.pt(13);
+
+  const mouthOpen =
+    Math.abs(lowerLip.y - upperLip.y);
+
+  const tongueTopY = lowerLip.y;
 
   ctx.save();
-  ctx.translate(mc.x, tongueTopY);
+  ctx.translate(mc.x, tongueTopY - s * 0.03);
   ctx.rotate(angle);
 
   // Tongue body — tall rounded rectangle drawn via a wide ellipse
   const tongueW  = s * 0.22;   // half-width  (wider than original)
-  const tongueH  = s * 0.56;   // half-height (much longer, hangs below chin)
+  const tongueH = s * (0.42 + mouthOpen * 0.015);   // half-height (much longer, hangs below chin)
   const tg = ctx.createLinearGradient(0, 0, 0, tongueH * 2);
   tg.addColorStop(0,   '#E8607A');
   tg.addColorStop(0.5, '#D45068');
