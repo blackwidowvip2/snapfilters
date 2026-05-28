@@ -15,13 +15,15 @@ export function drawDog(d: DrawCtx) {
 
   // Each ear is anchored where it meets the scalp; the visible body hangs down.
   const lEarAnchor = {
-    x: lEye.x - eyeSpan * 0.42,
-    y: lEye.y - s * 0.58,
+    // place ear clearly on the LEFT side of the forehead
+    x: lEye.x - eyeSpan * 0.72,
+    y: lEye.y - s * 0.34,
   };
 
   const rEarAnchor = {
-    x: rEye.x + eyeSpan * 0.42,
-    y: rEye.y - s * 0.58,
+    // place ear clearly on the RIGHT side of the forehead
+    x: rEye.x + eyeSpan * 0.72,
+    y: rEye.y - s * 0.34,
   };
 
   // ── Ears (drawn behind everything else) ──────────────────────────────
@@ -33,7 +35,7 @@ export function drawDog(d: DrawCtx) {
     // Translate to anchor point; the ear body is drawn centred slightly
     // below the anchor so it appears to droop naturally from the scalp.
     ctx.translate(anchor.x, anchor.y);
-    ctx.rotate(angle + side * 0.22);   // slight outward tilt per side
+    ctx.rotate(angle + side * 0.42);   // slight outward tilt per side
 
     // Outer ear — large floppy ellipse drooping downward
     const earCX = side * s * 0.02;
@@ -105,14 +107,15 @@ export function drawDog(d: DrawCtx) {
   const mouthOpen =
     Math.abs(lowerLip.y - upperLip.y);
 
-  const tongueTopY = lowerLip.y;
+  // tongue must begin under the lower lip and only extend downward
+  const tongueTopY = lowerLip.y + s * 0.10;
 
   ctx.save();
-  ctx.translate(mc.x, tongueTopY - s * 0.03);
+  ctx.translate(mc.x, tongueTopY);
   ctx.rotate(angle);
 
   // Tongue body — tall rounded rectangle drawn via a wide ellipse
-  const tongueW  = s * 0.22;   // half-width  (wider than original)
+  const tongueW  = s * 0.18;   // half-width  (wider than original)
   const tongueH = s * (0.42 + mouthOpen * 0.015);   // half-height (much longer, hangs below chin)
   const tg = ctx.createLinearGradient(0, 0, 0, tongueH * 2);
   tg.addColorStop(0,   '#E8607A');
@@ -128,7 +131,7 @@ export function drawDog(d: DrawCtx) {
   ctx.lineWidth   = s * 0.025;
   ctx.lineCap     = 'round';
   ctx.beginPath();
-  ctx.moveTo(0, s * 0.02);
+  ctx.moveTo(0, s * 0.12);
   ctx.lineTo(0, tongueH * 1.82);
   ctx.stroke();
 
