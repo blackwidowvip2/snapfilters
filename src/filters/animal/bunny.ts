@@ -16,10 +16,6 @@ export function drawBunny(d: DrawCtx) {
   const chin        = d.pt(152);
   const faceHeight  = Math.hypot(chin.x - foreheadTop.x, chin.y - foreheadTop.y);
 
-  const lEye  = d.eyeCenter('left');
-  const rEye  = d.eyeCenter('right');
-  const faceX = (lEye.x + rEye.x) / 2;
-
   // Unit vector pointing "up" along the head (from chin toward forehead),
   // so the ears track head tilt correctly.
   const upX = (foreheadTop.x - chin.x) / faceHeight;
