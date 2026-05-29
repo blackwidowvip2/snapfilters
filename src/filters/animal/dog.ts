@@ -5,53 +5,56 @@ export function drawDog(d: DrawCtx) {
   const nose   = d.pt(4);
   const lCheek = d.pt(234);
   const rCheek = d.pt(454);
-  const fh     = d.pt(10);   // top of forehead
 
-  // ── Ear positioning ───────────────────────────────────────────────────
-  // lCheek (234) and rCheek (454) are guaranteed to be on opposite sides.
-  // We use their X as horizontal anchors and push Y far above the forehead.
-  // The ear hangs downward from the anchor and leans outward (skewed).
-  const earOutwardX = Math.abs(rCheek.x - lCheek.x) * 0.18; // extra outward push
-  const earAnchorY  = fh.y - s * 0.55;                       // well above hairline
+  const lEye    = d.eyeCenter('left');
+  const rEye    = d.eyeCenter('right');
+  const faceX   = (lEye.x + rEye.x) / 2;
+  const faceY   = (lEye.y + rEye.y) / 2;
 
-  const ears = [
-    { anchorX: lCheek.x - earOutwardX, side: -1 as const },
-    { anchorX: rCheek.x + earOutwardX, side:  1 as const },
-  ];
+  // ── Ears ─────────────────────────────────────────────────────────────
+  // Anchor = top-centre of head, then spread wide to each side.
+  // faceY - s*0.85 places the anchor well above the hairline.
+  // side * s * 0.55 spreads them far to the left/right of the face centre.
+  // Each ear tilts ~25° outward so it hangs diagonally (as in dog.jpg).
+  //
+  //   left ear: anchored upper-left, droops lower-right
+  //   right ear: anchored upper-right, droops lower-left
+  [
+    { side: -1 as const },
+    { side:  1 as const },
+  ].forEach(({ side }) => {
+    const anchorX = faceX + side * s * 0.55;
+    const anchorY = faceY - s * 0.85;
 
-  // ── Ears (drawn first — behind face) ─────────────────────────────────
-  ears.forEach(({ anchorX, side }) => {
     ctx.save();
-    ctx.translate(anchorX, earAnchorY);
-    // Lean the ear outward: positive side = right ear leans right, etc.
-    ctx.rotate(angle + side * 0.38);
+    ctx.translate(anchorX, anchorY);
+    // Tilt: outward ear leans away from face centre; negative side tilts left
+    ctx.rotate(angle + side * 0.42);
 
-    // Outer ear — tall floppy ellipse hanging downward from anchor
-    const earRX = s * 0.24;
-    const earRY = s * 0.48;
-    const earCY = s * 0.28; // centre of ellipse sits below anchor
+    // The ear body hangs BELOW the anchor, so ellipse centre is at (0, +earRY).
+    const earRX = s * 0.22;
+    const earRY = s * 0.46;
+
+    // Outer ear
     const g = ctx.createRadialGradient(
-      side * s * 0.04, earCY - s * 0.10, 0,
-      0,               earCY,            earRY,
+      -side * s * 0.04, earRY * 0.45, 0,
+               0,       earRY,        earRY * 1.1,
     );
-    g.addColorStop(0,    '#BA8858');
-    g.addColorStop(0.5,  '#946030');
-    g.addColorStop(1,    '#4A2206');
+    g.addColorStop(0,    '#C49060');
+    g.addColorStop(0.50, '#9A6230');
+    g.addColorStop(1,    '#4C2508');
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.ellipse(0, earCY, earRX, earRY, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, earRY, earRX, earRY, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Inner ear — lighter warm tone
-    const ig = ctx.createRadialGradient(
-      side * s * 0.02, earCY - s * 0.06, 0,
-      0,               earCY,            earRY * 0.60,
-    );
-    ig.addColorStop(0, '#D8AE80');
-    ig.addColorStop(1, '#AE7848');
+    // Inner ear
+    const ig = ctx.createRadialGradient(0, earRY * 0.70, 0, 0, earRY, earRY * 0.60);
+    ig.addColorStop(0, '#DEB07A');
+    ig.addColorStop(1, '#B07848');
     ctx.fillStyle = ig;
     ctx.beginPath();
-    ctx.ellipse(0, earCY + s * 0.02, earRX * 0.52, earRY * 0.58, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, earRY + s * 0.01, earRX * 0.52, earRY * 0.56, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();
@@ -63,13 +66,12 @@ export function drawDog(d: DrawCtx) {
   ctx.rotate(angle);
   ctx.globalCompositeOperation = 'destination-out';
   ctx.beginPath();
-  ctx.ellipse(0, 0, s * 0.20, s * 0.14, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, s * 0.2, s * 0.14, 0, 0, Math.PI * 2);
   ctx.fillStyle = 'black';
   ctx.fill();
   ctx.globalCompositeOperation = 'source-over';
   const ng = ctx.createRadialGradient(-s * 0.02, -s * 0.02, 0, 0, 0, s * 0.15);
-  ng.addColorStop(0, '#2a1205');
-  ng.addColorStop(1, '#0d0500');
+  ng.addColorStop(0, '#2a1205'); ng.addColorStop(1, '#0d0500');
   ctx.fillStyle = ng;
   ctx.beginPath();
   ctx.ellipse(0, 0, s * 0.15, s * 0.10, 0, 0, Math.PI * 2);
@@ -82,64 +84,63 @@ export function drawDog(d: DrawCtx) {
   });
   ctx.fillStyle = 'rgba(255,255,255,0.25)';
   ctx.beginPath();
-  ctx.ellipse(-s * 0.044, -s * 0.028, s * 0.040, s * 0.024, -0.4, 0, Math.PI * 2);
+  ctx.ellipse(-s * 0.044, -s * 0.028, s * 0.04, s * 0.024, -0.4, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
   // ── Tongue ────────────────────────────────────────────────────────────
-  // The tongue must start BELOW the lower lip and hang downward over the
-  // chin — it must never reach up toward the nose.
+  // The tongue must hang FROM the lower lip downward — never touching the nose.
   //
-  // Strategy: anchor at mouthCenter().x, and use nose.y as a reference
-  // to compute a Y that is safely below the lower lip.
-  // In face meshes the lower lip sits roughly +0.30*s below the nose tip,
-  // and the chin at +0.52*s. We start the tongue at +0.30*s (lower lip
-  // base) and draw it going ONLY downward.
-  const mc         = d.mouthCenter();
-  const tongueTopY = nose.y + s * 0.30;  // at the lower lip, never near the nose
-  const tongueW    = s * 0.21;
-  const tongueH    = s * 0.52;           // hangs well below chin
+  // Strategy:
+  //  1. Find the lower-lip Y by taking mouthCenter and adding a fixed offset.
+  //     (We avoid d.pt(17) which may sit near the nose in some mesh layouts.)
+  //  2. Translate to (mouthCenter.x, lowerLipY) — this is the TOP edge of tongue.
+  //  3. Draw a rounded-rectangle shape whose TOP is at local y=0 and extends
+  //     downward. This guarantees the tongue never goes above the lower lip.
+  {
+    const mc         = d.mouthCenter();
+    // Lower lip sits ~10% of scale below the mouth-center landmark.
+    const lowerLipY  = mc.y + s * 0.10;
+    const tongueW    = s * 0.20;   // half-width
+    const tongueLen  = s * 0.62;   // total length hanging below lower lip
+    const roundR     = tongueW;    // radius of rounded bottom
 
-  ctx.save();
-  ctx.translate(mc.x, tongueTopY);
-  ctx.rotate(angle);
+    ctx.save();
+    ctx.translate(mc.x, lowerLipY);
+    ctx.rotate(angle);
 
-  // Draw tongue as a rounded rectangle shape:
-  // top flat edge, rounded bottom — use a path not an ellipse so the
-  // top doesn't bulge back up toward the nose.
-  const tg = ctx.createLinearGradient(0, 0, 0, tongueH * 2);
-  tg.addColorStop(0,    '#E8607A');
-  tg.addColorStop(0.45, '#D45068');
-  tg.addColorStop(1,    '#B83055');
-  ctx.fillStyle = tg;
+    // Rounded-rect path: top at y=0, bottom at y=tongueLen, rounded base.
+    const tg = ctx.createLinearGradient(0, 0, 0, tongueLen);
+    tg.addColorStop(0,   '#E8607A');
+    tg.addColorStop(0.55,'#D04868');
+    tg.addColorStop(1,   '#B02850');
+    ctx.fillStyle = tg;
 
-  ctx.beginPath();
-  // Top edge — flat horizontal line
-  ctx.moveTo(-tongueW, 0);
-  ctx.lineTo( tongueW, 0);
-  // Right side curves down to rounded bottom
-  ctx.quadraticCurveTo( tongueW, tongueH * 1.2,  0, tongueH * 2);
-  // Left side mirrors
-  ctx.quadraticCurveTo(-tongueW, tongueH * 1.2, -tongueW, 0);
-  ctx.closePath();
-  ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-tongueW, 0);
+    ctx.lineTo(-tongueW, tongueLen - roundR);
+    ctx.arc(0, tongueLen - roundR, roundR, Math.PI, 0, false);
+    ctx.lineTo(tongueW, 0);
+    ctx.closePath();
+    ctx.fill();
 
-  // Centre crease — runs from top to near the tip
-  ctx.strokeStyle = '#A02848';
-  ctx.lineWidth   = s * 0.026;
-  ctx.lineCap     = 'round';
-  ctx.beginPath();
-  ctx.moveTo(0, s * 0.01);
-  ctx.lineTo(0, tongueH * 1.75);
-  ctx.stroke();
+    // Centre crease
+    ctx.strokeStyle = 'rgba(140,30,55,0.70)';
+    ctx.lineWidth   = s * 0.024;
+    ctx.lineCap     = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0, s * 0.04);
+    ctx.lineTo(0, tongueLen - roundR * 0.3);
+    ctx.stroke();
 
-  // Highlight strip on the left side
-  ctx.fillStyle = 'rgba(255,200,210,0.26)';
-  ctx.beginPath();
-  ctx.ellipse(-tongueW * 0.40, tongueH * 0.75, tongueW * 0.20, tongueH * 0.42, -0.12, 0, Math.PI * 2);
-  ctx.fill();
+    // Highlight
+    ctx.fillStyle = 'rgba(255,200,210,0.26)';
+    ctx.beginPath();
+    ctx.ellipse(-tongueW * 0.36, tongueLen * 0.38, tongueW * 0.20, tongueLen * 0.28, -0.15, 0, Math.PI * 2);
+    ctx.fill();
 
-  ctx.restore();
+    ctx.restore();
+  }
 
   // ── Eye spots ─────────────────────────────────────────────────────────
   (['left', 'right'] as const).forEach(side => {
