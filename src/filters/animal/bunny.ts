@@ -6,39 +6,55 @@ export function drawBunny(d: DrawCtx) {
   const lCheek = d.pt(234);
   const rCheek = d.pt(454);
 
-  const lEye    = d.eyeCenter('left');
-  const rEye    = d.eyeCenter('right');
-  const faceX   = (lEye.x + rEye.x) / 2;
-  const faceY   = (lEye.y + rEye.y) / 2;
+  // ── Reference landmarks for vertical placement ────────
+  // pt(10)  = top-centre of the forehead (highest face-mesh point)
+  // pt(152) = bottom of the chin
+  // The distance between them is the full face height; we use it (not `s`,
+  // which is only the small inter-ocular distance) to push the ears UP to
+  // the very top of the head.
+  const foreheadTop = d.pt(10);
+  const chin        = d.pt(152);
+  const faceHeight  = Math.hypot(chin.x - foreheadTop.x, chin.y - foreheadTop.y);
 
-  // ── Tall upright ears ─────────────────────────────────
-  // Reference image: two tall, slightly tapered ears standing upright on the
-  // forehead, leaning gently outward, white outer fur with a soft pink inner.
-  // Anchored on the forehead (well above the eyes) at faceY - s*0.55, spread
-  // to each side by ±s*0.30.
+  const lEye  = d.eyeCenter('left');
+  const rEye  = d.eyeCenter('right');
+  const faceX = (lEye.x + rEye.x) / 2;
+
+  // Unit vector pointing "up" along the head (from chin toward forehead),
+  // so the ears track head tilt correctly.
+  const upX = (foreheadTop.x - chin.x) / faceHeight;
+  const upY = (foreheadTop.y - chin.y) / faceHeight;
+  // Perpendicular (points to the person's right in image space) for sideways spread.
+  const sideX = -upY;
+  const sideY =  upX;
+
+  // ── Tall upright ears, planted ON TOP of the head ─────
+  // Base of each ear = forehead-top, pushed further up by 0.30 of face height,
+  // and spread sideways by ±0.22 of face height.
   [
     { side: -1 as const },
     { side:  1 as const },
   ].forEach(({ side }) => {
-    const baseX = faceX + side * s * 0.30;
-    const baseY = faceY - s * 0.55;   // sits on the forehead
+    const upOffset   = faceHeight * 0.30;   // above the forehead
+    const sideOffset = faceHeight * 0.22 * side;
+
+    const baseX = foreheadTop.x + upX * upOffset + sideX * sideOffset;
+    const baseY = foreheadTop.y + upY * upOffset + sideY * sideOffset;
 
     ctx.save();
     ctx.translate(baseX, baseY);
-    ctx.rotate(angle + side * 0.18);   // lean outward from the head
+    // Orient ear along head-up direction, plus a small outward lean.
+    ctx.rotate(angle + side * 0.20);
 
-    // Ear dimensions
-    const earH  = s * 1.05;   // total height (tall)
-    const earW  = s * 0.17;   // half-width at the widest point
+    const earH = faceHeight * 0.62;   // tall ears
+    const earW = faceHeight * 0.11;   // half-width
 
-    // ── Outer ear (white fur with subtle shading) ──
+    // Outer ear (white fur)
     const eg = ctx.createLinearGradient(-earW, 0, earW, 0);
     eg.addColorStop(0,   '#EFE2EC');
     eg.addColorStop(0.5, '#FFFFFF');
     eg.addColorStop(1,   '#E2CFDD');
     ctx.fillStyle = eg;
-
-    // Pointed-oval ear shape via bezier curves: base at (0,0), tip at (0,-earH)
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.bezierCurveTo(-earW, -earH * 0.18, -earW, -earH * 0.78, 0, -earH);
@@ -46,10 +62,10 @@ export function drawBunny(d: DrawCtx) {
     ctx.closePath();
     ctx.fill();
     ctx.strokeStyle = '#D8BFD3';
-    ctx.lineWidth   = s * 0.012;
+    ctx.lineWidth   = Math.max(1, faceHeight * 0.006);
     ctx.stroke();
 
-    // ── Inner ear (pink) ──
+    // Inner ear (pink)
     const innerH = earH * 0.80;
     const innerW = earW * 0.55;
     const ig = ctx.createLinearGradient(0, -innerH, 0, -earH * 0.08);
@@ -74,7 +90,6 @@ export function drawBunny(d: DrawCtx) {
   ctx.fillStyle = 'black'; ctx.fill();
   ctx.globalCompositeOperation = 'source-over';
 
-  // Pink rounded nose — shaped like the upside-down triangle/heart in the image
   const ng = ctx.createRadialGradient(-s*0.012, -s*0.018, 0, 0, 0, s*0.085);
   ng.addColorStop(0, '#FF9ECB'); ng.addColorStop(1, '#F25C9A');
   ctx.fillStyle = ng;
@@ -86,15 +101,12 @@ export function drawBunny(d: DrawCtx) {
   ctx.closePath();
   ctx.fill();
 
-  // Highlight
   ctx.fillStyle = 'rgba(255,255,255,0.45)';
   ctx.beginPath(); ctx.ellipse(-s*0.022, -s*0.022, s*0.022, s*0.014, -0.4, 0, Math.PI*2); ctx.fill();
 
-  // Vertical philtrum line below nose
   ctx.strokeStyle = 'rgba(220,90,140,0.55)';
   ctx.lineWidth = s*0.014; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(0, s*0.075); ctx.lineTo(0, s*0.16); ctx.stroke();
-
   ctx.restore();
 
   // ── Whiskers ──────────────────────────────────────────
