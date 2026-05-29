@@ -5,65 +5,53 @@ export function drawDog(d: DrawCtx) {
   const nose   = d.pt(4);
   const lCheek = d.pt(234);
   const rCheek = d.pt(454);
+  const fh     = d.pt(10);   // top of forehead
 
-  // ── Ear anchor points: above the forehead, derived from eye centres ──
-  // We offset significantly upward (−Y) and slightly outward (±X) so the
-  // ears sit at the very top of the head, matching the reference image.
-  const lEye = d.eyeCenter('left');
-  const rEye = d.eyeCenter('right');
-  const eyeSpan = Math.abs(rEye.x - lEye.x);          // face-width proxy
+  // ── Ear positioning ───────────────────────────────────────────────────
+  // lCheek (234) and rCheek (454) are guaranteed to be on opposite sides.
+  // We use their X as horizontal anchors and push Y far above the forehead.
+  // The ear hangs downward from the anchor and leans outward (skewed).
+  const earOutwardX = Math.abs(rCheek.x - lCheek.x) * 0.18; // extra outward push
+  const earAnchorY  = fh.y - s * 0.55;                       // well above hairline
 
-  // Each ear is anchored where it meets the scalp; the visible body hangs down.
-  const lEarAnchor = {
-    // place ear clearly on the LEFT side of the forehead
-    x: lEye.x - eyeSpan * 0.72,
-    y: lEye.y - s * 0.34,
-  };
+  const ears = [
+    { anchorX: lCheek.x - earOutwardX, side: -1 as const },
+    { anchorX: rCheek.x + earOutwardX, side:  1 as const },
+  ];
 
-  const rEarAnchor = {
-    // place ear clearly on the RIGHT side of the forehead
-    x: rEye.x + eyeSpan * 0.72,
-    y: rEye.y - s * 0.34,
-  };
-
-  // ── Ears (drawn behind everything else) ──────────────────────────────
-  [
-    { anchor: lEarAnchor, side: -1 as const },
-    { anchor: rEarAnchor, side:  1 as const },
-  ].forEach(({ anchor, side }) => {
+  // ── Ears (drawn first — behind face) ─────────────────────────────────
+  ears.forEach(({ anchorX, side }) => {
     ctx.save();
-    // Translate to anchor point; the ear body is drawn centred slightly
-    // below the anchor so it appears to droop naturally from the scalp.
-    ctx.translate(anchor.x, anchor.y);
-    ctx.rotate(angle + side * 0.42);   // slight outward tilt per side
+    ctx.translate(anchorX, earAnchorY);
+    // Lean the ear outward: positive side = right ear leans right, etc.
+    ctx.rotate(angle + side * 0.38);
 
-    // Outer ear — large floppy ellipse drooping downward
-    const earCX = side * s * 0.02;
-    const earCY = s * 0.30;            // centre of ellipse below anchor
-    const earRX = s * 0.26;
-    const earRY = s * 0.50;
+    // Outer ear — tall floppy ellipse hanging downward from anchor
+    const earRX = s * 0.24;
+    const earRY = s * 0.48;
+    const earCY = s * 0.28; // centre of ellipse sits below anchor
     const g = ctx.createRadialGradient(
-      earCX - side * s * 0.04, earCY - s * 0.08, 0,
-      earCX,                   earCY,             earRY,
+      side * s * 0.04, earCY - s * 0.10, 0,
+      0,               earCY,            earRY,
     );
-    g.addColorStop(0, '#B8845A');
-    g.addColorStop(0.55, '#96612F');
-    g.addColorStop(1,    '#4C2508');
+    g.addColorStop(0,    '#BA8858');
+    g.addColorStop(0.5,  '#946030');
+    g.addColorStop(1,    '#4A2206');
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.ellipse(earCX, earCY, earRX, earRY, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, earCY, earRX, earRY, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Inner ear — warm lighter tone
+    // Inner ear — lighter warm tone
     const ig = ctx.createRadialGradient(
-      earCX, earCY - s * 0.06, 0,
-      earCX, earCY,            earRY * 0.62,
+      side * s * 0.02, earCY - s * 0.06, 0,
+      0,               earCY,            earRY * 0.60,
     );
-    ig.addColorStop(0, '#D4A882');
-    ig.addColorStop(1, '#B07848');
+    ig.addColorStop(0, '#D8AE80');
+    ig.addColorStop(1, '#AE7848');
     ctx.fillStyle = ig;
     ctx.beginPath();
-    ctx.ellipse(earCX, earCY + s * 0.02, earRX * 0.55, earRY * 0.60, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, earCY + s * 0.02, earRX * 0.52, earRY * 0.58, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();
@@ -75,12 +63,13 @@ export function drawDog(d: DrawCtx) {
   ctx.rotate(angle);
   ctx.globalCompositeOperation = 'destination-out';
   ctx.beginPath();
-  ctx.ellipse(0, 0, s * 0.2, s * 0.14, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, s * 0.20, s * 0.14, 0, 0, Math.PI * 2);
   ctx.fillStyle = 'black';
   ctx.fill();
   ctx.globalCompositeOperation = 'source-over';
   const ng = ctx.createRadialGradient(-s * 0.02, -s * 0.02, 0, 0, 0, s * 0.15);
-  ng.addColorStop(0, '#2a1205'); ng.addColorStop(1, '#0d0500');
+  ng.addColorStop(0, '#2a1205');
+  ng.addColorStop(1, '#0d0500');
   ctx.fillStyle = ng;
   ctx.beginPath();
   ctx.ellipse(0, 0, s * 0.15, s * 0.10, 0, 0, Math.PI * 2);
@@ -93,52 +82,61 @@ export function drawDog(d: DrawCtx) {
   });
   ctx.fillStyle = 'rgba(255,255,255,0.25)';
   ctx.beginPath();
-  ctx.ellipse(-s * 0.044, -s * 0.028, s * 0.04, s * 0.024, -0.4, 0, Math.PI * 2);
+  ctx.ellipse(-s * 0.044, -s * 0.028, s * 0.040, s * 0.024, -0.4, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
   // ── Tongue ────────────────────────────────────────────────────────────
-  // Anchor at the lower lip so the tongue appears to protrude from the mouth
-  // and hang far below the chin, matching the reference image.
-  const mc = d.mouthCenter();
-  const lowerLip = d.pt(14);
-  const upperLip = d.pt(13);
-
-  const mouthOpen =
-    Math.abs(lowerLip.y - upperLip.y);
-
-  // tongue must begin under the lower lip and only extend downward
-  const tongueTopY = lowerLip.y + s * 0.10;
+  // The tongue must start BELOW the lower lip and hang downward over the
+  // chin — it must never reach up toward the nose.
+  //
+  // Strategy: anchor at mouthCenter().x, and use nose.y as a reference
+  // to compute a Y that is safely below the lower lip.
+  // In face meshes the lower lip sits roughly +0.30*s below the nose tip,
+  // and the chin at +0.52*s. We start the tongue at +0.30*s (lower lip
+  // base) and draw it going ONLY downward.
+  const mc         = d.mouthCenter();
+  const tongueTopY = nose.y + s * 0.30;  // at the lower lip, never near the nose
+  const tongueW    = s * 0.21;
+  const tongueH    = s * 0.52;           // hangs well below chin
 
   ctx.save();
   ctx.translate(mc.x, tongueTopY);
   ctx.rotate(angle);
 
-  // Tongue body — tall rounded rectangle drawn via a wide ellipse
-  const tongueW  = s * 0.18;   // half-width  (wider than original)
-  const tongueH = s * (0.42 + mouthOpen * 0.015);   // half-height (much longer, hangs below chin)
+  // Draw tongue as a rounded rectangle shape:
+  // top flat edge, rounded bottom — use a path not an ellipse so the
+  // top doesn't bulge back up toward the nose.
   const tg = ctx.createLinearGradient(0, 0, 0, tongueH * 2);
-  tg.addColorStop(0,   '#E8607A');
-  tg.addColorStop(0.5, '#D45068');
-  tg.addColorStop(1,   '#B83055');
+  tg.addColorStop(0,    '#E8607A');
+  tg.addColorStop(0.45, '#D45068');
+  tg.addColorStop(1,    '#B83055');
   ctx.fillStyle = tg;
+
   ctx.beginPath();
-  ctx.ellipse(0, tongueH, tongueW, tongueH, 0, 0, Math.PI * 2);
+  // Top edge — flat horizontal line
+  ctx.moveTo(-tongueW, 0);
+  ctx.lineTo( tongueW, 0);
+  // Right side curves down to rounded bottom
+  ctx.quadraticCurveTo( tongueW, tongueH * 1.2,  0, tongueH * 2);
+  // Left side mirrors
+  ctx.quadraticCurveTo(-tongueW, tongueH * 1.2, -tongueW, 0);
+  ctx.closePath();
   ctx.fill();
 
-  // Centre crease — runs the full length of the tongue
-  ctx.strokeStyle = '#B03050';
-  ctx.lineWidth   = s * 0.025;
+  // Centre crease — runs from top to near the tip
+  ctx.strokeStyle = '#A02848';
+  ctx.lineWidth   = s * 0.026;
   ctx.lineCap     = 'round';
   ctx.beginPath();
-  ctx.moveTo(0, s * 0.12);
-  ctx.lineTo(0, tongueH * 1.82);
+  ctx.moveTo(0, s * 0.01);
+  ctx.lineTo(0, tongueH * 1.75);
   ctx.stroke();
 
-  // Highlight along the left side
-  ctx.fillStyle = 'rgba(255,200,210,0.28)';
+  // Highlight strip on the left side
+  ctx.fillStyle = 'rgba(255,200,210,0.26)';
   ctx.beginPath();
-  ctx.ellipse(-tongueW * 0.38, tongueH * 0.7, tongueW * 0.22, tongueH * 0.45, -0.15, 0, Math.PI * 2);
+  ctx.ellipse(-tongueW * 0.40, tongueH * 0.75, tongueW * 0.20, tongueH * 0.42, -0.12, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.restore();
