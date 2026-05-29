@@ -7,13 +7,37 @@ export const Preview: React.FC = () => {
 
   if (!capturedImage) return null;
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    const filename = `snapfilter-${Date.now()}.jpg`;
+
+    // Convert data URL to Blob
+    const res = await fetch(capturedImage);
+    const blob = await res.blob();
+
+    // Web Share API with files — supported on iOS 15+ and modern Android
+    if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'image/jpeg' })] })) {
+      try {
+        await navigator.share({
+          files: [new File([blob], filename, { type: 'image/jpeg' })],
+          title: 'Snapfilter foto',
+        });
+        setCapturedImage(null);
+        return;
+      } catch (err) {
+        // User cancelled share — do nothing
+        if ((err as DOMException).name === 'AbortError') return;
+      }
+    }
+
+    // Fallback: anchor download (works on Android Chrome and desktop)
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = capturedImage;
-    a.download = `snapfilter-${Date.now()}.jpg`;
+    a.href = url;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    URL.revokeObjectURL(url);
     setCapturedImage(null);
   };
 
